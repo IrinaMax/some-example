@@ -1,0 +1,45 @@
+$ this script is bungle through rolling  linear models
+
+p <- 3  ## number of parameters in lm()
+n <- nrow(dat) - 1
+
+## a function to return what you desire for subset dat[1:x, ]
+bundle <- function(x) {
+  fit <- lm(log(clicks) ~ log(v1) + log(v12), data = dat, subset = 1:x, model = FALSE)
+  pred <- predict(fit, newdata = dat[x+1, ], se.fit = TRUE)
+  c(summary(fit)$adj.r.squared, pred$fit, pred$se.fit)
+  }
+
+## rolling regression / prediction
+result <- t(sapply(p:n, bundle))
+colnames(result) <- c("adj.r2", "prediction", "se")
+
+
+#Note I have done several things inside the bundle function:
+
+I have used subset argument for selecting a subset to fit
+I have used model = FALSE to not save model frame hence we save workspace
+Overall, there is no obvious loop, but sapply is used.
+
+Fitting starts from p, the minimum number of data required to fit a model with p coefficients;
+Fitting terminates at nrow(dat) - 1, as we at least need the final column for prediction.
+
+#testing
+dat <- data.frame(clicks = runif(30, 1, 100), v1 = runif(30, 1, 100),
+                  v12 = runif(30, 1, 100))
+#
+Applying code above gives results (27 rows in total, truncated output for 5 rows)
+
+            adj.r2 prediction        se
+ [1,]          NaN   3.881068       NaN
+ [2,]  0.106592619   3.676821 0.7517040
+ [3,]  0.545993989   3.892931 0.2758347
+ [4,]  0.622612495   3.766101 0.1508270
+ [5,]  0.180462206   3.996344 0.2059014
+The first column is the adjusted-R.squared value for fitted model, while the second column is the prediction. 
+The first value for adj.r2 is NaN, because the first model we fit has 3 coefficients for 3 data points, hence no sensible statistics is available. 
+The same happens to se as well, as the fitted line has no 0 residuals, so prediction is done without uncertainty.
+
+
+                  
+                  
