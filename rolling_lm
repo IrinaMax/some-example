@@ -40,6 +40,71 @@ The first column is the adjusted-R.squared value for fitted model, while the sec
 The first value for adj.r2 is NaN, because the first model we fit has 3 coefficients for 3 data points, hence no sensible statistics is available. 
 The same happens to se as well, as the fitted line has no 0 residuals, so prediction is done without uncertainty.
 
+#2 (Efficient) Solution
 
-                  
+data <- data.frame(v1=rnorm(100),v2=rnorm(100),clicks=rnorm(100))
+
+data1 = data[1:(nrow(data)-1), ]
+data2 = data[nrow(data), ]
+
+for(i in 3:nrow(data)){
+  nam  <- paste("predict", i, sep = "")
+  nam1 <- paste("fit", i, sep = "")
+  nam2 <- paste("summary_fit", i, sep = "")
+
+  fit = lm(clicks ~ v1 + v2, data=data[1:i,])
+  tmp  <- predict(fit, newdata=data2, se.fit=TRUE)
+  tmp1 <- fit
+  tmp2 <- summary(fit)
+  assign(nam, tmp)
+  assign(nam1, tmp1)
+  assign(nam2, tmp2)
+}
+All of the results you want will be stored in the data objects this creates.
+
+For example:
+
+> summary_fit10$r.squared
+[1] 0.3087432
+#If you'd like a table of results. You can programmatically create tables of results from the 3 types of output files like this:
+
+rm(data,data1,data2,i,nam,nam1,nam2,fit,tmp,tmp1,tmp2)
+frames <- ls()
+
+frames.fit     <- frames[1:98] #change index or use pattern matching as needed
+frames.predict <- frames[99:196]
+frames.sum     <- frames[197:294]
+
+fit.table <- data.frame(intercept=NA,v1=NA,v2=NA,sourcedf=NA)
+for(i in 1:length(frames.fit)){
+  tmp <- get(frames.fit[i])
+  fit.table              <- rbind(fit.table,c(tmp$coefficients[[1]],tmp$coefficients[[2]],tmp$coefficients[[3]],frames.fit[i]))
+}
+
+fit.table
+
+> fit.table
+             intercept                   v1                   v2 sourcedf
+2  -0.0647017971121678     1.34929652763687   -0.300502017324518    fit10
+3  -0.0401617893034109   -0.034750571912636  -0.0843076273486442   fit100
+4   0.0132968863522573     1.31283604433593   -0.388846211083564    fit11
+5   0.0315113918953643     1.31099122173898   -0.371130010135382    fit12
+6    0.149582794027583    0.958692838785998   -0.299479715938493    fit13
+7  0.00759688947362175    0.703525856001948   -0.297223988673322    fit14
+8    0.219756240025917    0.631961979610744   -0.347851129205841    fit15
+9     0.13389223748979    0.560583832333355   -0.276076134872669    fit16
+10   0.147258022154645    0.581865844000838   -0.278212722024832    fit17
+11  0.0592160359650468    0.469842498721747   -0.163187274356457    fit18
+12   0.120640756525163    0.430051839741539   -0.201725012088506    fit19
+13   0.101443924785995     0.34966728554219   -0.231560038360121    fit20
+14  0.0416637001406594    0.472156988919337   -0.247684504074867    fit21
+15 -0.0158319749710781    0.451944113682333   -0.171367482879835    fit22
+16 -0.0337969739950376    0.423851304105399   -0.157905431162024    fit23
+17  -0.109460218252207     0.32206642419212   -0.055331391802687    fit24
+18  -0.100560410735971    0.335862465403716  -0.0609509815266072    fit25
+19  -0.138175283219818    0.390418411384468  -0.0873106257144312    fit26
+20  -0.106984355317733    0.391270279253722  -0.0560299858019556    fit27
+21 -0.0740684978271464    0.385267011513678  -0.0548056844433894    fit28
+
+#https://stackoverflow.com/questions/38041167/rolling-regression-and-prediction-with-lm-and-predict/38041406#38041406
                   
